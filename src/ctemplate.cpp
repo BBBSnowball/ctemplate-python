@@ -177,13 +177,19 @@ Dictionary_SetGlobalValue (Dictionary_Object* self, PyObject* args) {
     char* value;
     int value_len;
     PyObject* value_obj = PyObject_Str(obj);
+    if (value_obj == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
     if (PyString_AsStringAndSize(value_obj, &value, &value_len) == -1) {
+        Py_DECREF(obj);
         Py_DECREF(value_obj);
         return NULL;
     }
     self->dict->
         SetTemplateGlobalValue(google::TemplateString(name, name_len),
                                google::TemplateString(value, value_len));
+    Py_DECREF(obj);
     Py_DECREF(value_obj);
     Py_RETURN_NONE;
 }
@@ -240,6 +246,8 @@ dict_ass_sub(Dictionary_Object* self, PyObject *name, PyObject *value) {
         char* cvalue;
         int lvalue;
         PyObject* value_obj = PyObject_Str(value);
+        if (value_obj == NULL)
+            return -1;
         if (PyString_AsStringAndSize(value_obj, &cvalue, &lvalue) == -1) {
             Py_DECREF(value_obj);
             return -1;
@@ -471,13 +479,19 @@ ctemplate_SetGlobalValue (PyObject* self, PyObject* args) {
     char* value;
     int value_len;
     PyObject* value_obj = PyObject_Str(obj);
+    if (value_obj == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
     if (PyString_AsStringAndSize(value_obj, &value, &value_len) == -1) {
+        Py_DECREF(obj);
         Py_DECREF(value_obj);
         return NULL;
     }
     google::TemplateDictionary::
         SetGlobalValue(google::TemplateString(name, name_len),
                        google::TemplateString(value, value_len));
+    Py_DECREF(obj);
     Py_DECREF(value_obj);
     Py_RETURN_NONE;
 }
