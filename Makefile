@@ -1,4 +1,5 @@
 # build dir for svn-buildpackage
+PYTHON:=python
 VERSION:=$(shell python setup.py --version)
 SVNBUILD:=/home/calvin/src/build-area
 DEB_ORIG_TARGET:=$(SVNBUILD)/python-ctemplate_$(VERSION).orig.tar.gz
@@ -15,7 +16,7 @@ cleandeb:
 .PHONY: deb_orig
 deb_orig:
 	if [ ! -e $(DEB_ORIG_TARGET) ]; then \
-	  python setup.py sdist && \
+	  $(PYTHON) setup.py sdist && \
 	  cp dist/python-ctemplate-$(VERSION).tar.gz $(DEB_ORIG_TARGET); \
 	fi
 
@@ -27,8 +28,13 @@ deb_signed: cleandeb
 	  -sgpg -pgpg -k$(GPGKEY) -r"fakeroot --" 2>&1) | \
 	tee $(SVNBUILD)/python-ctemplate-$(VERSION).build
 
-test:
-	python tests/test.py
+.PHONY: localbuild
+localbuild:
+	$(PYTHON) setup.py build
+	cp build/lib*/*.so .
+
+test:	localbuild
+	$(PYTHON) tests/test.py
 
 clean:	cleandeb
 	rm -rf build dist
