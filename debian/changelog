@@ -1,3 +1,10 @@
+python-ctemplate (0.2-0calvin1) private; urgency=low
+
+  * New upstream release.
+  * Fill out email address stup in debian/bts
+
+ -- Bastian Kleineidam <calvin@debian.org>  Tue, 19 Sep 2006 16:50:41 +0200
+
 python-ctemplate (0.1-0calvin2) private; urgency=low
 
   * Fix documentation of ctemplate.Dictionary
