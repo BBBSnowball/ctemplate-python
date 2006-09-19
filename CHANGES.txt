@@ -1,0 +1,5 @@
+0.2
+  * Wrap Dictionary.SetValueAndShowSection() function.
+
+0.1
+  * Initial release.
