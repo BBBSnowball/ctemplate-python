@@ -22,3 +22,9 @@ dictionary["IN_CA"] = True
 dictionary["IGNORED"] = False
 # And of course the expand function
 print template.Expand(dictionary)
+
+Installation
+============
+Run "python setup.py install". See "python setup.py install --help" for
+options.
+
