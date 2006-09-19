@@ -30,6 +30,9 @@ deb_signed: cleandeb
 test:
 	python tests/test.py
 
-clean:
-	rm -rf build *.so
+clean:	cleandeb
+	rm -rf build dist
+	rm -f *.so
+	find . -name \*.pyc -delete
+	find . -name \*.pyo -delete
 
