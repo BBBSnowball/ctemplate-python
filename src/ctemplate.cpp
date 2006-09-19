@@ -96,7 +96,7 @@ Dictionary_ShowSection (Dictionary_Object* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
-/* Dictionary.SetValueAndShowSection(name) -> None */
+/* Dictionary.SetValueAndShowSection(name, value, section) -> None */
 static PyObject*
 Dictionary_SetValueAndShowSection (Dictionary_Object* self, PyObject* args) {
     const char* name;
