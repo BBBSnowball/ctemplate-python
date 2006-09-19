@@ -1,3 +1,6 @@
+0.3
+  * Fix reference counting for string values.
+
 0.2
   * Wrap Dictionary.SetValueAndShowSection() function.
 
