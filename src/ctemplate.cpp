@@ -62,26 +62,27 @@ Dictionary_Dealloc (Dictionary_Object* self) {
 static PyObject*
 Dictionary_SetValue (Dictionary_Object* self, PyObject* args) {
     const char* name;
-    size_t name_len;
-    PyObject* obj;
-    if (!PyArg_ParseTuple(args, "s#O", &name, &name_len, &obj))
+    PyObject* value;
+    PyObject* strvalue;
+    const char* cvalue;
+    if (!PyArg_ParseTuple(args, "sO", &name, &value))
         return NULL;
-    char* value;
-    int value_len;
-    PyObject* value_obj = PyObject_Str(obj);
-    if (value_obj == NULL) {
-        Py_DECREF(obj);
-        return NULL;
-    }
-    if (PyString_AsStringAndSize(value_obj, &value, &value_len) == -1) {
-        Py_DECREF(obj);
-        Py_DECREF(value_obj);
+    // increment ref for PyObject_Str call
+    Py_INCREF(value);
+    if ((strvalue = PyObject_Str(value)) == NULL) {
+        Py_DECREF(value);
         return NULL;
     }
-    self->dict->SetValue(google::TemplateString(name, name_len),
-                         google::TemplateString(value, value_len));
-    Py_DECREF(obj);
-    Py_DECREF(value_obj);
+    Py_DECREF(value);
+    if ((cvalue = PyString_AsString(strvalue)) == NULL) {
+        return NULL;
+    }
+    self->dict->SetValue(google::TemplateString(name),
+                         google::TemplateString(cvalue));
+    // XXX When strvalue is garbage collected, the internal char buffer
+    // is freed, which invalidates the TemplateString buffer.
+    // But then the strvalue ref is never decremented.
+    // Py_DECREF(strvalue);
     Py_RETURN_NONE;
 }
 
@@ -89,10 +90,9 @@ Dictionary_SetValue (Dictionary_Object* self, PyObject* args) {
 static PyObject*
 Dictionary_ShowSection (Dictionary_Object* self, PyObject* args) {
     const char* name;
-    size_t name_len;
-    if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
+    if (!PyArg_ParseTuple(args, "s", &name))
         return NULL;
-    self->dict->ShowSection(google::TemplateString(name, name_len));
+    self->dict->ShowSection(google::TemplateString(name));
     Py_RETURN_NONE;
 }
 
@@ -100,30 +100,25 @@ Dictionary_ShowSection (Dictionary_Object* self, PyObject* args) {
 static PyObject*
 Dictionary_SetValueAndShowSection (Dictionary_Object* self, PyObject* args) {
     const char* name;
-    size_t name_len;
-    PyObject* obj;
+    PyObject* value;
+    PyObject* strvalue;
+    const char* cvalue;
     const char* section;
-    size_t section_len;
-    if (!PyArg_ParseTuple(args, "s#Os#", &name, &name_len,
-                          &obj, &section, &section_len))
+    if (!PyArg_ParseTuple(args, "sOs", &name, &value, &section))
         return NULL;
-    char* value;
-    int value_len;
-    PyObject* value_obj = PyObject_Str(obj);
-    if (value_obj == NULL) {
-        Py_DECREF(obj);
+    // increment ref for PyObject_Str call
+    Py_INCREF(value);
+    if ((strvalue = PyObject_Str(value)) == NULL) {
+        Py_DECREF(value);
         return NULL;
     }
-    if (PyString_AsStringAndSize(value_obj, &value, &value_len) == -1) {
-        Py_DECREF(value_obj);
-        Py_DECREF(obj);
+    Py_DECREF(value);
+    if ((cvalue = PyString_AsString(strvalue)) == NULL) {
         return NULL;
     }
-    self->dict->SetValueAndShowSection(google::TemplateString(name, name_len),
-                                       google::TemplateString(value, value_len),
-                                       google::TemplateString(section, section_len));
-    Py_DECREF(value_obj);
-    Py_DECREF(obj);
+    self->dict->SetValueAndShowSection(google::TemplateString(name),
+                                       google::TemplateString(cvalue),
+                                       google::TemplateString(section));
     Py_RETURN_NONE;
 }
 
