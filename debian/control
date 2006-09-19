@@ -1,0 +1,19 @@
+Source: python-ctemplate
+Section: python
+Priority: extra
+Maintainer: Bastian Kleineidam <calvin@debian.org>
+Build-Depends:  python-all-dev (>= 2.3.5-11), debhelper (>= 5.0.37.2), cdbs (>= 0.4.43), python-central (>= 0.5), libctemplate-dev
+XS-Python-Standards-Version: 0.4
+XS-Python-Version: >= 2.4
+Standards-Version: 3.7.2
+
+Package: python-ctemplate
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+XB-Python-Version: ${python:Versions}
+Provides: ${python:Provides}
+Description: a Python wrapper for the ctemplate library
+ *** Private package from <calvin@debian.org>. ***
+ .
+ The ctemplate package contains a library implementing a simple but
+ powerful template language for C++.

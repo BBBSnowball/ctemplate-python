@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+DEB_PYTHON_SYSTEM=pycentral
+#DEB_TAR_SRCDIR                  := python-ctemplate-0.1
+#DEB_AUTO_CLEANUP_RCS            := yes
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/python-distutils.mk
+
+binary-post-install/python-ctemplate::
+	install -m 0644 debian/bts debian/python-ctemplate/usr/share/bug/python-ctemplate/control

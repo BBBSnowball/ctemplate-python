@@ -1,0 +1,13 @@
+python-ctemplate (0.1-0calvin2) private; urgency=low
+
+  * Fix documentation of ctemplate.Dictionary
+  * Add python help command to README.txt
+
+ -- Bastian Kleineidam <calvin@debian.org>  Tue, 19 Sep 2006 10:57:06 +0200
+
+python-ctemplate (0.1-0calvin1) private; urgency=low
+
+  * Initial release
+
+ -- Bastian Kleineidam <calvin@debian.org>  Tue, 19 Sep 2006 09:40:42 +0200
+
