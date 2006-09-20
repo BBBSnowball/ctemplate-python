@@ -2,6 +2,42 @@
 #include "structmember.h" /* Python include for object definition */
 #include <google/template.h>
 
+/* Error reporting for module init functions (from mxProxy) */
+#define Py_ReportModuleInitError(modname) {			\
+    PyObject *exc_type, *exc_value, *exc_tb;			\
+    PyObject *str_type, *str_value;				\
+								\
+    /* Fetch error objects and convert them to strings */	\
+    PyErr_Fetch(&exc_type, &exc_value, &exc_tb);		\
+    if (exc_type && exc_value) {				\
+	str_type = PyObject_Str(exc_type);			\
+	str_value = PyObject_Str(exc_value);			\
+    }								\
+    else {							\
+	str_type = NULL;					\
+	str_value = NULL;					\
+    }								\
+    /* Try to format a more informative error message using the	\
+       original error */					\
+    if (str_type && str_value &&				\
+	PyString_Check(str_type) && PyString_Check(str_value))	\
+	PyErr_Format(						\
+		PyExc_ImportError,				\
+		"initialization of module "modname" failed "	\
+		"(%s:%s)",					\
+		PyString_AS_STRING(str_type),			\
+		PyString_AS_STRING(str_value));			\
+    else							\
+	PyErr_SetString(					\
+		PyExc_ImportError,				\
+		"initialization of module "modname" failed");	\
+    Py_XDECREF(str_type);					\
+    Py_XDECREF(str_value);					\
+    Py_XDECREF(exc_type);					\
+    Py_XDECREF(exc_value);					\
+    Py_XDECREF(exc_tb);						\
+}
+
 // type convert int -> google::Strip
 static google::Strip strip_from_int (int i) {
     switch (i) {
@@ -75,6 +111,7 @@ Dictionary_SetValue (Dictionary_Object* self, PyObject* args) {
     }
     Py_DECREF(value);
     if ((cvalue = PyString_AsString(strvalue)) == NULL) {
+        Py_DECREF(strvalue);
         return NULL;
     }
     self->dict->SetValue(google::TemplateString(name),
@@ -114,11 +151,16 @@ Dictionary_SetValueAndShowSection (Dictionary_Object* self, PyObject* args) {
     }
     Py_DECREF(value);
     if ((cvalue = PyString_AsString(strvalue)) == NULL) {
+        Py_DECREF(strvalue);
         return NULL;
     }
     self->dict->SetValueAndShowSection(google::TemplateString(name),
                                        google::TemplateString(cvalue),
                                        google::TemplateString(section));
+    // XXX When strvalue is garbage collected, the internal char buffer
+    // is freed, which invalidates the TemplateString buffer.
+    // But then the strvalue ref is never decremented.
+    // Py_DECREF(strvalue);
     Py_RETURN_NONE;
 }
 
@@ -165,27 +207,28 @@ Dictionary_SetFilename (Dictionary_Object* self, PyObject* args) {
 static PyObject *
 Dictionary_SetGlobalValue (Dictionary_Object* self, PyObject* args) {
     const char* name;
-    size_t name_len;
-    PyObject* obj;
-    if (!PyArg_ParseTuple(args, "s#O", &name, &name_len, &obj))
+    PyObject* value;
+    PyObject* strvalue;
+    const char* cvalue;
+    if (!PyArg_ParseTuple(args, "sO", &name, &value))
         return NULL;
-    char* value;
-    int value_len;
-    PyObject* value_obj = PyObject_Str(obj);
-    if (value_obj == NULL) {
-        Py_DECREF(obj);
+    Py_INCREF(value);
+    if ((strvalue = PyObject_Str(value)) == NULL) {
+        Py_DECREF(value);
         return NULL;
     }
-    if (PyString_AsStringAndSize(value_obj, &value, &value_len) == -1) {
-        Py_DECREF(obj);
-        Py_DECREF(value_obj);
+    Py_DECREF(value);
+    if ((cvalue = PyString_AsString(strvalue)) == NULL) {
+        Py_DECREF(strvalue);
         return NULL;
     }
     self->dict->
-        SetTemplateGlobalValue(google::TemplateString(name, name_len),
-                               google::TemplateString(value, value_len));
-    Py_DECREF(obj);
-    Py_DECREF(value_obj);
+        SetTemplateGlobalValue(google::TemplateString(name),
+                               google::TemplateString(cvalue));
+    // XXX When strvalue is garbage collected, the internal char buffer
+    // is freed, which invalidates the TemplateString buffer.
+    // But then the strvalue ref is never decremented.
+    // Py_DECREF(strvalue);
     Py_RETURN_NONE;
 }
 
@@ -222,35 +265,42 @@ dict_ass_sub(Dictionary_Object* self, PyObject *name, PyObject *value) {
         PyErr_Format(PyExc_AttributeError, "deletion of values not supported");
         return -1;
     }
-    char* cname;
-    int lname;
-    if (PyString_AsStringAndSize(name, &cname, &lname) == -1) {
+    const char* cname;
+    if ((cname = PyString_AsString(name)) == NULL) {
         return -1;
     }
+    Py_INCREF(value);
     if (PyBool_Check(value)) {
         int res;
         if ((res = PyObject_IsTrue(value)) == -1) {
+            Py_DECREF(value);
             return -1;
         }
         if (res) {
-            self->dict->ShowSection(google::TemplateString(cname, lname));
+            self->dict->ShowSection(google::TemplateString(cname));
         }
     }
     else
     {
         char* cvalue;
-        int lvalue;
-        PyObject* value_obj = PyObject_Str(value);
-        if (value_obj == NULL)
-            return -1;
-        if (PyString_AsStringAndSize(value_obj, &cvalue, &lvalue) == -1) {
-            Py_DECREF(value_obj);
+        PyObject* strvalue;
+        if ((strvalue = PyObject_Str(value)) == NULL) {
+            Py_DECREF(value);
             return -1;
         }
-        self->dict->SetValue(google::TemplateString(cname, lname),
-                             google::TemplateString(cvalue, lvalue));
-        Py_DECREF(value_obj);
+        if ((cvalue = PyString_AsString(strvalue)) == NULL) {
+            Py_DECREF(value);
+            Py_DECREF(strvalue);
+            return -1;
+        }
+        self->dict->SetValue(google::TemplateString(cname),
+                             google::TemplateString(cvalue));
     }
+    Py_DECREF(value);
+    // XXX When strvalue is garbage collected, the internal char buffer
+    // is freed, which invalidates the TemplateString buffer.
+    // But then the strvalue ref is never decremented.
+    // Py_DECREF(strvalue);
     return 0;
 }
 
@@ -360,10 +410,7 @@ Template_Init (Template_Object* self, PyObject* args) {
 /* deallocate Template object */
 static void
 Template_Dealloc (Template_Object* self) {
-    if (self->ctemplate) {
-        delete self->ctemplate;
-        self->ctemplate = NULL;
-    }
+    // note that self->ctemplate will be deleted by google::ClearCache()
     self->ob_type->tp_free((PyObject*)self);
 }
 
@@ -563,8 +610,17 @@ add_constants (PyObject* m) {
     PyModule_AddIntConstant(m, "TS_RELOAD", google::TS_RELOAD);
 }
 
+static void
+clear_template_cache (void) {
+    google::Template::ClearCache();
+}
 
 extern "C" {
+
+static void
+ctemplate_Cleanup (void) {
+    clear_template_cache();
+}
 
 #ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
 #define PyMODINIT_FUNC void
@@ -581,21 +637,26 @@ PyMODINIT_FUNC initctemplate (void) {
     m = Py_InitModule3("ctemplate", ctemplate_methods,
                        "Wrapper for the ctemplate library.");
     if (m == NULL) {
-        return;
+        goto onError;
     }
+    /* Register cleanup function */
+    if (Py_AtExit(ctemplate_Cleanup) == -1)
+        goto onError;
+
     Py_INCREF(&Template_Type);
     if (PyModule_AddObject(m, "Template",
                            (PyObject *)&Template_Type) == -1) {
-        /* init error */
-        PyErr_Print();
+        goto onError;
     }
     Py_INCREF(&Dictionary_Type);
     if (PyModule_AddObject(m, "Dictionary",
                            (PyObject *)&Dictionary_Type) == -1) {
-        /* init error */
-        PyErr_Print();
+        goto onError;
     }
     add_constants(m);
+onError:
+    if (PyErr_Occurred())
+	Py_ReportModuleInitError("ctemplate");
 }
 
 } /* extern C */
