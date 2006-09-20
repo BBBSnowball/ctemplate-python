@@ -178,8 +178,7 @@ Dictionary_Dump (Dictionary_Object* self, PyObject* args) {
 static PyObject*
 Dictionary_AddSectionDictionary (Dictionary_Object* self, PyObject* args) {
     const char* name;
-    size_t name_len;
-    if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
+    if (!PyArg_ParseTuple(args, "s", &name))
         return NULL;
     extern PyTypeObject Dictionary_Type;
     PyTypeObject* type = &Dictionary_Type;
@@ -189,7 +188,25 @@ Dictionary_AddSectionDictionary (Dictionary_Object* self, PyObject* args) {
     }
     dict->subdict = true;
     dict->dict = self->dict->
-        AddSectionDictionary(google::TemplateString(name, name_len));
+        AddSectionDictionary(google::TemplateString(name));
+    return (PyObject*)dict;
+}
+
+/* Dictionary.AddIncludeDictionary(name) -> Dictionary */
+static PyObject*
+Dictionary_AddIncludeDictionary (Dictionary_Object* self, PyObject* args) {
+    const char* name;
+    if (!PyArg_ParseTuple(args, "s", &name))
+        return NULL;
+    extern PyTypeObject Dictionary_Type;
+    PyTypeObject* type = &Dictionary_Type;
+    Dictionary_Object* dict;
+    if ( (dict = (Dictionary_Object*) type->tp_alloc(type, 0)) == NULL) {
+        return NULL;
+    }
+    dict->subdict = true;
+    dict->dict = self->dict->
+        AddIncludeDictionary(google::TemplateString(name));
     return (PyObject*)dict;
 }
 
@@ -244,6 +261,8 @@ static PyMethodDef Dictionary_Methods[] = {
      "Dump to string."},
     {"AddSectionDictionary", (PyCFunction)Dictionary_AddSectionDictionary,
      METH_VARARGS, "Add section dictionary."},
+    {"AddIncludeDictionary", (PyCFunction)Dictionary_AddIncludeDictionary,
+     METH_VARARGS, "Add include dictionary."},
     {"SetFilename", (PyCFunction)Dictionary_SetFilename, METH_VARARGS,
      "Set filename."},
     {"SetGlobalValue", (PyCFunction)Dictionary_SetGlobalValue, METH_VARARGS,
