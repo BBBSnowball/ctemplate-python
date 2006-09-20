@@ -8,7 +8,7 @@ myname = "Bastian Kleineidam"
 myemail = "calvin@debian.org"
 
 setup (name = 'python-ctemplate',
-       version = '0.3',
+       version = '0.4',
        description = 'Python wrapper for the ctemplate library',
        author = myname,
        author_email = myemail,
