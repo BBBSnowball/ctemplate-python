@@ -1,3 +1,9 @@
+python-ctemplate (0.6-0calvin1) private; urgency=low
+
+  * New upstream release.
+
+ -- Bastian Kleineidam <calvin@debian.org>  Fri, 22 Sep 2006 17:21:06 +0200
+
 python-ctemplate (0.5-0calvin1) private; urgency=low
 
   * New upstream release.
