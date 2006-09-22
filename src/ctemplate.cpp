@@ -39,7 +39,7 @@
 }
 
 // type convert int -> google::Strip
-static google::Strip strip_from_int (int i) {
+static google::Strip strip_from_int (unsigned int i) {
     switch (i) {
     case 0:
         return google::DO_NOT_STRIP;
@@ -590,6 +590,49 @@ ctemplate_ClearCache (PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+static PyObject *
+ctemplate_RegisterTemplate (PyObject* self, PyObject* args) {
+    const char* name;
+    if (!PyArg_ParseTuple(args, "s", &name))
+        return NULL;
+    google::TemplateNamelist::RegisterTemplate(name);
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+ctemplate_GetBadSyntaxList (PyObject* self, PyObject* args) {
+    unsigned int i;
+    PyObject* obj;
+    if (!PyArg_ParseTuple(args, "OI", &obj, &i))
+        return NULL;
+    Py_INCREF(obj);
+    int refresh;
+    if ((refresh = PyObject_IsTrue(obj)) == -1) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    Py_DECREF(obj);
+    google::TemplateNamelist::SyntaxListType the_list =
+        google::TemplateNamelist::
+        GetBadSyntaxList((refresh==1), strip_from_int(i));
+    PyObject* pylist;
+    if ((pylist = PyList_New(the_list.size())) == NULL) {
+        return NULL;
+    }
+    // construct list
+    for (unsigned int i=0; i < the_list.size(); i++) {
+        if ((obj = PyString_FromString(the_list[i].c_str())) == NULL) {
+            Py_DECREF(pylist);
+            return NULL;
+        }
+        if (PyList_SetItem(pylist, i, obj) == -1) {
+            Py_DECREF(pylist);
+            return NULL;
+        }
+    }
+    return pylist;
+}
+
 static PyMethodDef ctemplate_methods[] = {
     {"SetGlobalValue", (PyCFunction)ctemplate_SetGlobalValue, METH_VARARGS,
     "Set global variable value."},
@@ -615,6 +658,23 @@ static PyMethodDef ctemplate_methods[] = {
      "this one.) Note: this method is not necessary unless you are\n"
      "testing for memory leaks. Calling this before exiting the\n"
      "program will prevent unnecessary reporting in that case."},
+     {"RegisterTemplate", (PyCFunction)ctemplate_RegisterTemplate, METH_VARARGS,
+      "Takes a name and pushes it onto the static namelist."},
+     {"GetBadSyntaxList", (PyCFunction)ctemplate_GetBadSyntaxList, METH_VARARGS,
+      "If refresh is true or if it is the first time the function is called\n"
+      "in the execution of the program, it creates (or clears) the 'bad\n"
+      "syntax' list and then fills it with the list of\n"
+      "templates that the program knows about but contain syntax errors.\n"
+      "A missing file is not considered a syntax error, and thus is\n"
+      "not included in this list.\n"
+      "If refresh is false and it is not the first time the function is\n"
+      "called, it merely returns the list created in the\n"
+      "call when the last refresh was done.\n"
+      "NOTE: The side effect of calling this the first time or\n"
+      "with refresh equal true is that all templates are parsed and cached.\n"
+      "Hence they need to be retrieved with the flags that\n"
+      "the program needs them loaded with (i.e, the strip parameter\n"
+      "passed to Template::GetTemplate.)."},
     {NULL} /* Sentinel */
 };
 

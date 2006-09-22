@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import os
 import sys
-sys.path.append(os.getcwd())
+sys.path.insert(0, os.getcwd())
 import ctemplate
 
 def test_constants ():
@@ -49,6 +49,7 @@ def test_subdict (dictionary):
 def main ():
     test_constants()
     filename = os.path.join("tests", "test.tpl")
+    ctemplate.RegisterTemplate(filename)
     template = ctemplate.Template(filename, ctemplate.DO_NOT_STRIP)
     test_global()
     dictionary = ctemplate.Dictionary("my example dict")
@@ -60,6 +61,7 @@ def main ():
     test_subdict(dictionary)
     print dictionary.Dump()
     print template.Expand(dictionary)
+    print "Errors", ctemplate.GetBadSyntaxList(True, ctemplate.DO_NOT_STRIP)
 
 
 if __name__ == '__main__':

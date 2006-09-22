@@ -1,3 +1,6 @@
+0.6
+  * Wrap RegisterTemplateFilename() and GetBadSyntaxList() functions
+
 0.5
   * Wrap Dictionary.AddIncludeDictionary() function
 
