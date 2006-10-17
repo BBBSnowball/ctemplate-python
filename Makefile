@@ -1,4 +1,5 @@
-# build dir for svn-buildpackage
+# Makefile used for local development.
+# Can also generate a signed Debian .deb package
 PYTHON:=python
 VERSION:=$(shell python setup.py --version)
 SVNBUILD:=/home/calvin/src/build-area

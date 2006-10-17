@@ -10,6 +10,7 @@ myemail = "calvin@debian.org"
 setup (name = 'python-ctemplate',
        version = '0.6',
        description = 'Python wrapper for the ctemplate library',
+       license = "Proprietary; contact author for more info",
        author = myname,
        author_email = myemail,
        maintainer = myname,
