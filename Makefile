@@ -2,7 +2,7 @@
 # Can also generate a signed Debian .deb package
 PYTHON:=python
 VERSION:=$(shell python setup.py --version)
-SVNBUILD:=/home/calvin/src/build-area
+SVNBUILD:=$(HOME)/src/build-area
 DEB_ORIG_TARGET:=$(SVNBUILD)/python-ctemplate_$(VERSION).orig.tar.gz
 GPGKEY:=2DE589F5
 
@@ -34,9 +34,11 @@ localbuild:
 	$(PYTHON) setup.py build
 	cp build/lib*/*.so .
 
+.PHONY: test
 test:	localbuild
 	$(PYTHON) tests/test.py
 
+.PHONY: clean
 clean:	cleandeb
 	rm -rf build dist
 	rm -f *.so
