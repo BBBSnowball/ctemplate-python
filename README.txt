@@ -3,6 +3,11 @@ Python interface to the ctemplate library
 
 The main functions and classes of the ctemplate library are
 wrapped as native Python objects.
+This enables quick prototyping and testing of a ctemplate
+system.
+
+Overview
+========
 Run python internal help() for an API overview:
 $ python -c "import ctemplate; help(ctemplate)"
 
