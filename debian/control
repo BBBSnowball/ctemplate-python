@@ -13,7 +13,12 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
 XB-Python-Version: ${python:Versions}
 Provides: ${python:Provides}
 Description: a Python wrapper for the ctemplate library
- *** Private package from <calvin@debian.org>. ***
+ *** Unofficial package from <calvin@debian.org>. ***
  .
  The ctemplate package contains a library implementing a simple but
  powerful template language for C++.
+ .
+ The main functions and classes of the ctemplate library are
+ wrapped as native Python objects.
+ This enables quick prototyping and testing of a ctemplate
+ system.
