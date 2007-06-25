@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: iso-8859-1 -*-
+# Copyright (C) 2007 Bastian Kleineidam
 from distutils.core import setup, Extension
 
 module1 = Extension('ctemplate',
@@ -10,7 +13,7 @@ myemail = "calvin@debian.org"
 setup (name = 'python-ctemplate',
        version = '0.6',
        description = 'Python wrapper for the ctemplate library',
-       license = "Proprietary; contact author for more info",
+       license = "BSD, see COPYING",
        author = myname,
        author_email = myemail,
        maintainer = myname,
