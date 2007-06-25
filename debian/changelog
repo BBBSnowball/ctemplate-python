@@ -1,6 +1,7 @@
-python-ctemplate (0.6-0calvin1) private; urgency=low
+python-ctemplate (0.6-0calvin1) unstable; urgency=low
 
   * New upstream release.
+  * Using official BSD-licensed tarball.
 
  -- Bastian Kleineidam <calvin@debian.org>  Fri, 22 Sep 2006 17:21:06 +0200
 
