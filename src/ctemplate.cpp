@@ -714,7 +714,7 @@ add_constants (PyObject* m) {
     PyModule_AddIntConstant(m, "TS_EMPTY", google::TS_EMPTY);
     PyModule_AddIntConstant(m, "TS_ERROR", google::TS_ERROR);
     PyModule_AddIntConstant(m, "TS_READY", google::TS_READY);
-    PyModule_AddIntConstant(m, "TS_RELOAD", google::TS_RELOAD);
+    PyModule_AddIntConstant(m, "TS_SHOULD_RELOAD", google::TS_SHOULD_RELOAD);
 }
 
 static void

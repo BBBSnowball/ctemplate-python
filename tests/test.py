@@ -11,7 +11,7 @@ def test_constants ():
     print "TS_EMPTY", ctemplate.TS_EMPTY
     print "TS_ERROR", ctemplate.TS_ERROR
     print "TS_READY", ctemplate.TS_READY
-    print "TS_RELOAD", ctemplate.TS_RELOAD
+    print "TS_SHOULD_RELOAD", ctemplate.TS_SHOULD_RELOAD
 
 def test_global ():
     ctemplate.SetGlobalValue("GLOBAL_FOO", "bar")
