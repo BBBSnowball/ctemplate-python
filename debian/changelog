@@ -1,3 +1,9 @@
+python-ctemplate (0.7-0calvin1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Bastian Kleineidam <calvin@debian.org>  Thu, 29 Nov 2007 13:04:34 +0100
+
 python-ctemplate (0.6-0calvin1) unstable; urgency=low
 
   * New upstream release.
