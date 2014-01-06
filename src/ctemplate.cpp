@@ -28,7 +28,7 @@ SUCH DAMAGE.
  */
 #include "Python.h"
 #include "structmember.h" /* Python include for object definition */
-#include <google/template.h>
+#include <ctemplate/template.h>
 
 /* Error reporting for module init functions (adapted from mxProxy) */
 #define Py_ReportModuleInitError(modname) {			\
@@ -66,17 +66,17 @@ SUCH DAMAGE.
     Py_XDECREF(exc_tb);						\
 }
 
-// type convert int -> google::Strip
-static google::Strip strip_from_int (unsigned int i) {
+// type convert int -> ctemplate::Strip
+static ctemplate::Strip strip_from_int (unsigned int i) {
     switch (i) {
     case 0:
-        return google::DO_NOT_STRIP;
+        return ctemplate::DO_NOT_STRIP;
     case 1:
-        return google::STRIP_BLANK_LINES;
+        return ctemplate::STRIP_BLANK_LINES;
     case 2:
-        return google::STRIP_WHITESPACE;
+        return ctemplate::STRIP_WHITESPACE;
     default:
-        return google::DO_NOT_STRIP;
+        return ctemplate::DO_NOT_STRIP;
     }
 }
 
@@ -84,7 +84,7 @@ static google::Strip strip_from_int (unsigned int i) {
 /* Type definition */
 typedef struct {
     PyObject_HEAD
-    google::TemplateDictionary* dict;
+    ctemplate::TemplateDictionary* dict;
     // Subdirectories don't have to be deleted on dealloc.
     bool subdict;
 } Dictionary_Object;
@@ -108,7 +108,7 @@ Dictionary_Init (Dictionary_Object* self, PyObject* args) {
     const char* name;
     if (!PyArg_ParseTuple(args, "s", &name))
         return -1;
-    self->dict = new google::TemplateDictionary(std::string(name));
+    self->dict = new ctemplate::TemplateDictionary(std::string(name));
     return 0;
 }
 
@@ -142,8 +142,8 @@ Dictionary_SetValue (Dictionary_Object* self, PyObject* args) {
         Py_DECREF(strvalue);
         return NULL;
     }
-    self->dict->SetValue(google::TemplateString(name),
-                         google::TemplateString(cvalue));
+    self->dict->SetValue(ctemplate::TemplateString(name),
+                         ctemplate::TemplateString(cvalue));
     // XXX When strvalue is garbage collected, the internal char buffer
     // is freed, which invalidates the TemplateString buffer.
     // But then the strvalue ref is never decremented.
@@ -157,7 +157,7 @@ Dictionary_ShowSection (Dictionary_Object* self, PyObject* args) {
     const char* name;
     if (!PyArg_ParseTuple(args, "s", &name))
         return NULL;
-    self->dict->ShowSection(google::TemplateString(name));
+    self->dict->ShowSection(ctemplate::TemplateString(name));
     Py_RETURN_NONE;
 }
 
@@ -182,9 +182,9 @@ Dictionary_SetValueAndShowSection (Dictionary_Object* self, PyObject* args) {
         Py_DECREF(strvalue);
         return NULL;
     }
-    self->dict->SetValueAndShowSection(google::TemplateString(name),
-                                       google::TemplateString(cvalue),
-                                       google::TemplateString(section));
+    self->dict->SetValueAndShowSection(ctemplate::TemplateString(name),
+                                       ctemplate::TemplateString(cvalue),
+                                       ctemplate::TemplateString(section));
     // XXX When strvalue is garbage collected, the internal char buffer
     // is freed, which invalidates the TemplateString buffer.
     // But then the strvalue ref is never decremented.
@@ -216,7 +216,7 @@ Dictionary_AddSectionDictionary (Dictionary_Object* self, PyObject* args) {
     }
     dict->subdict = true;
     dict->dict = self->dict->
-        AddSectionDictionary(google::TemplateString(name));
+        AddSectionDictionary(ctemplate::TemplateString(name));
     return (PyObject*)dict;
 }
 
@@ -234,7 +234,7 @@ Dictionary_AddIncludeDictionary (Dictionary_Object* self, PyObject* args) {
     }
     dict->subdict = true;
     dict->dict = self->dict->
-        AddIncludeDictionary(google::TemplateString(name));
+        AddIncludeDictionary(ctemplate::TemplateString(name));
     return (PyObject*)dict;
 }
 
@@ -245,7 +245,7 @@ Dictionary_SetFilename (Dictionary_Object* self, PyObject* args) {
     size_t name_len;
     if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
         return NULL;
-    self->dict->SetFilename(google::TemplateString(name, name_len));
+    self->dict->SetFilename(ctemplate::TemplateString(name, name_len));
     Py_RETURN_NONE;
 }
 
@@ -268,8 +268,8 @@ Dictionary_SetGlobalValue (Dictionary_Object* self, PyObject* args) {
         return NULL;
     }
     self->dict->
-        SetTemplateGlobalValue(google::TemplateString(name),
-                               google::TemplateString(cvalue));
+        SetTemplateGlobalValue(ctemplate::TemplateString(name),
+                               ctemplate::TemplateString(cvalue));
     // XXX When strvalue is garbage collected, the internal char buffer
     // is freed, which invalidates the TemplateString buffer.
     // But then the strvalue ref is never decremented.
@@ -324,7 +324,7 @@ dict_ass_sub(Dictionary_Object* self, PyObject *name, PyObject *value) {
             return -1;
         }
         if (res) {
-            self->dict->ShowSection(google::TemplateString(cname));
+            self->dict->ShowSection(ctemplate::TemplateString(cname));
         }
     }
     else
@@ -340,8 +340,8 @@ dict_ass_sub(Dictionary_Object* self, PyObject *name, PyObject *value) {
             Py_DECREF(strvalue);
             return -1;
         }
-        self->dict->SetValue(google::TemplateString(cname),
-                             google::TemplateString(cvalue));
+        self->dict->SetValue(ctemplate::TemplateString(cname),
+                             ctemplate::TemplateString(cvalue));
     }
     Py_DECREF(value);
     // XXX When strvalue is garbage collected, the internal char buffer
@@ -357,7 +357,9 @@ static PyMappingMethods dict_as_mapping = {
     (objobjargproc)dict_ass_sub, /* mp_ass_subscript */
 };
 
-static PyTypeObject Dictionary_Type = {
+// It cannot be static because we have declared it as 'extern' before.
+// This would cause a linker error.
+PyTypeObject Dictionary_Type = {
     PyObject_HEAD_INIT(NULL)
     0,              /* ob_size */
     "ctemplate.Dictionary",             /* tp_name */
@@ -420,7 +422,7 @@ static PyTypeObject Dictionary_Type = {
 
 typedef struct {
     PyObject_HEAD
-    google::Template* ctemplate;
+    ctemplate::Template* ctemplate;
 } Template_Object;
 
 
@@ -443,7 +445,7 @@ Template_Init (Template_Object* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "Si", &filename, &strip))
         return -1;
     const char* cfilename = PyString_AsString(filename);
-    self->ctemplate = google::Template::GetTemplate(std::string(cfilename),
+    self->ctemplate = ctemplate::Template::GetTemplate(std::string(cfilename),
                                                     strip_from_int(strip));
     // raise IOError when template filename was not readable
     if (self->ctemplate == NULL) {
@@ -457,7 +459,7 @@ Template_Init (Template_Object* self, PyObject* args) {
 /* deallocate Template object */
 static void
 Template_Dealloc (Template_Object* self) {
-    // note that self->ctemplate will be deleted by google::ClearCache()
+    // note that self->ctemplate will be deleted by ctemplate::ClearCache()
     self->ob_type->tp_free((PyObject*)self);
 }
 
@@ -566,7 +568,7 @@ ctemplate_SetGlobalValue (PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "s#O", &name, &name_len, &obj))
         return NULL;
     char* value;
-    int value_len;
+    Py_ssize_t value_len;
     PyObject* value_obj = PyObject_Str(obj);
     if (value_obj == NULL) {
         Py_DECREF(obj);
@@ -577,9 +579,9 @@ ctemplate_SetGlobalValue (PyObject* self, PyObject* args) {
         Py_DECREF(value_obj);
         return NULL;
     }
-    google::TemplateDictionary::
-        SetGlobalValue(google::TemplateString(name, name_len),
-                       google::TemplateString(value, value_len));
+    ctemplate::TemplateDictionary::
+        SetGlobalValue(ctemplate::TemplateString(name, name_len),
+                       ctemplate::TemplateString(value, value_len));
     Py_DECREF(obj);
     Py_DECREF(value_obj);
     Py_RETURN_NONE;
@@ -590,7 +592,7 @@ ctemplate_SetTemplateRootDirectory (PyObject* self, PyObject* args) {
     const char* name;
     if (!PyArg_ParseTuple(args, "s", &name))
         return NULL;
-    return PyBool_FromLong(google::Template::
+    return PyBool_FromLong(ctemplate::Template::
                            SetTemplateRootDirectory(std::string(name)));
 }
 
@@ -598,7 +600,7 @@ static PyObject *
 ctemplate_GetTemplateRootDirectory (PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, ""))
         return NULL;
-    std::string name = google::Template::template_root_directory();
+    std::string name = ctemplate::Template::template_root_directory();
     return PyString_FromString(name.c_str());
 }
 
@@ -606,7 +608,7 @@ static PyObject *
 ctemplate_ReloadAllIfChanged (PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, ""))
         return NULL;
-    google::Template::ReloadAllIfChanged();
+    ctemplate::Template::ReloadAllIfChanged();
     Py_RETURN_NONE;
 }
 
@@ -614,7 +616,7 @@ static PyObject *
 ctemplate_ClearCache (PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, ""))
         return NULL;
-    google::Template::ClearCache();
+    ctemplate::Template::ClearCache();
     Py_RETURN_NONE;
 }
 
@@ -623,7 +625,7 @@ ctemplate_RegisterTemplate (PyObject* self, PyObject* args) {
     const char* name;
     if (!PyArg_ParseTuple(args, "s", &name))
         return NULL;
-    google::TemplateNamelist::RegisterTemplate(name);
+    ctemplate::TemplateNamelist::RegisterTemplate(name);
     Py_RETURN_NONE;
 }
 
@@ -640,8 +642,8 @@ ctemplate_GetBadSyntaxList (PyObject* self, PyObject* args) {
         return NULL;
     }
     Py_DECREF(obj);
-    google::TemplateNamelist::SyntaxListType the_list =
-        google::TemplateNamelist::
+    ctemplate::TemplateNamelist::SyntaxListType the_list =
+        ctemplate::TemplateNamelist::
         GetBadSyntaxList((refresh==1), strip_from_int(i));
     PyObject* pylist;
     if ((pylist = PyList_New(the_list.size())) == NULL) {
@@ -708,18 +710,17 @@ static PyMethodDef ctemplate_methods[] = {
 
 static void
 add_constants (PyObject* m) {
-    PyModule_AddIntConstant(m, "DO_NOT_STRIP", google::DO_NOT_STRIP);
-    PyModule_AddIntConstant(m, "STRIP_BLANK_LINES", google::STRIP_BLANK_LINES);
-    PyModule_AddIntConstant(m, "STRIP_WHITESPACE", google::STRIP_WHITESPACE);
-    PyModule_AddIntConstant(m, "TS_EMPTY", google::TS_EMPTY);
-    PyModule_AddIntConstant(m, "TS_ERROR", google::TS_ERROR);
-    PyModule_AddIntConstant(m, "TS_READY", google::TS_READY);
-    PyModule_AddIntConstant(m, "TS_SHOULD_RELOAD", google::TS_SHOULD_RELOAD);
+    PyModule_AddIntConstant(m, "DO_NOT_STRIP", ctemplate::DO_NOT_STRIP);
+    PyModule_AddIntConstant(m, "STRIP_BLANK_LINES", ctemplate::STRIP_BLANK_LINES);
+    PyModule_AddIntConstant(m, "STRIP_WHITESPACE", ctemplate::STRIP_WHITESPACE);
+    PyModule_AddIntConstant(m, "TS_EMPTY", ctemplate::TS_EMPTY);
+    PyModule_AddIntConstant(m, "TS_ERROR", ctemplate::TS_ERROR);
+    PyModule_AddIntConstant(m, "TS_READY", ctemplate::TS_READY);
 }
 
 static void
 clear_template_cache (void) {
-    google::Template::ClearCache();
+    ctemplate::Template::ClearCache();
 }
 
 extern "C" {

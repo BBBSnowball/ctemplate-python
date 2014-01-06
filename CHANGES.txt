@@ -1,3 +1,6 @@
+0.8
+  * Fix compilation with ctemplate 1.0-1.
+
 0.7
   * Rename TS_RELOAD to the changed TS_SHOULD_RELOAD. Fixes compilation
     with ctemplate >= 0.8.

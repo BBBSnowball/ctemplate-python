@@ -1,0 +1,7 @@
+/build/
+/debian/files
+/debian/*.debhelper.log
+/debian/python-ctemplate/
+/debian/*.substvars
+/debian/*.*.debhelper
+/debian/python-module-stampdir/

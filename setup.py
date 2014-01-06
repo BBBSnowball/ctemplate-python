@@ -11,7 +11,7 @@ myname = "Bastian Kleineidam"
 myemail = "calvin@debian.org"
 
 setup (name = 'python-ctemplate',
-       version = '0.7',
+       version = '0.8',
        description = 'Python wrapper for the ctemplate library',
        license = "BSD, see COPYING",
        author = myname,
