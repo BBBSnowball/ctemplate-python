@@ -504,7 +504,7 @@ static PyMethodDef Template_Methods[] = {
     "TS_READY or TS_ERROR.  Return value is true iff we reloaded\n"
     "because the content changed and could be parsed with no errors."},
     {"state", (PyCFunction)Template_State, METH_VARARGS,
-    "One of TS_EMPTY, TS_ERROR, TS_READY, TS_RELOAD"},
+    "One of TS_EMPTY, TS_ERROR, TS_READY"},
     {NULL} /* Sentinel */
 };
 
