@@ -663,6 +663,73 @@ ctemplate_GetBadSyntaxList (PyObject* self, PyObject* args) {
     return pylist;
 }
 
+class PythonTemplateModifier : public ctemplate::TemplateModifier {
+    PyObject *modifier_function;
+public:
+    PythonTemplateModifier(PyObject *modifier_function) : modifier_function(modifier_function) {
+        Py_INCREF(modifier_function);
+    }
+
+    virtual ~PythonTemplateModifier() {
+        Py_DECREF(modifier_function);
+    }
+
+    virtual void Modify(const char* in, size_t inlen,
+                        const ctemplate::PerExpandData* per_expand_data,
+                        ctemplate::ExpandEmitter* outbuf,
+                        const std::string& arg) const {
+        PyObject *arglist, *result;
+
+        arglist = Py_BuildValue("(s#,s#)", in, inlen, arg.c_str(), arg.size());
+        result = PyObject_CallObject(modifier_function, arglist);
+        Py_DECREF(arglist);
+
+        outbuf->Emit(PyString_AsString(result));
+
+        Py_DECREF(result);
+    }
+};
+
+static bool CheckCallback(PyObject *callback) {
+    if (PyCallable_Check(callback)) {
+        return true;
+    } else {
+        PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+        return false;
+    }
+}
+
+static PyObject *
+DoAddModifier(PyObject* args, bool xss_safe) {
+    const char* long_name;
+    PyObject *callback;
+    if (!PyArg_ParseTuple(args, "sO", &long_name, &callback))
+        return NULL;
+
+    if (!CheckCallback(callback))
+        return NULL;
+    
+    //TODO memory is never freed...
+    ctemplate::TemplateModifier * modifier = new PythonTemplateModifier(callback);
+
+    if (xss_safe)
+        ctemplate::AddXssSafeModifier(long_name, modifier);
+    else
+        ctemplate::AddModifier(long_name, modifier);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+ctemplate_AddModifier(PyObject* self, PyObject* args) {
+    return DoAddModifier(args, false);
+}
+
+static PyObject *
+ctemplate_AddXssSafeModifier(PyObject* self, PyObject* args) {
+    return DoAddModifier(args, true);
+}
+
 static PyMethodDef ctemplate_methods[] = {
     {"SetGlobalValue", (PyCFunction)ctemplate_SetGlobalValue, METH_VARARGS,
     "Set global variable value."},
@@ -688,23 +755,67 @@ static PyMethodDef ctemplate_methods[] = {
      "this one.) Note: this method is not necessary unless you are\n"
      "testing for memory leaks. Calling this before exiting the\n"
      "program will prevent unnecessary reporting in that case."},
-     {"RegisterTemplate", (PyCFunction)ctemplate_RegisterTemplate, METH_VARARGS,
-      "Takes a name and pushes it onto the static namelist."},
-     {"GetBadSyntaxList", (PyCFunction)ctemplate_GetBadSyntaxList, METH_VARARGS,
-      "If refresh is true or if it is the first time the function is called\n"
-      "in the execution of the program, it creates (or clears) the 'bad\n"
-      "syntax' list and then fills it with the list of\n"
-      "templates that the program knows about but contain syntax errors.\n"
-      "A missing file is not considered a syntax error, and thus is\n"
-      "not included in this list.\n"
-      "If refresh is false and it is not the first time the function is\n"
-      "called, it merely returns the list created in the\n"
-      "call when the last refresh was done.\n"
-      "NOTE: The side effect of calling this the first time or\n"
-      "with refresh equal true is that all templates are parsed and cached.\n"
-      "Hence they need to be retrieved with the flags that\n"
-      "the program needs them loaded with (i.e, the strip parameter\n"
-      "passed to Template::GetTemplate.)."},
+    {"RegisterTemplate", (PyCFunction)ctemplate_RegisterTemplate, METH_VARARGS,
+     "Takes a name and pushes it onto the static namelist."},
+    {"GetBadSyntaxList", (PyCFunction)ctemplate_GetBadSyntaxList, METH_VARARGS,
+     "If refresh is true or if it is the first time the function is called\n"
+     "in the execution of the program, it creates (or clears) the 'bad\n"
+     "syntax' list and then fills it with the list of\n"
+     "templates that the program knows about but contain syntax errors.\n"
+     "A missing file is not considered a syntax error, and thus is\n"
+     "not included in this list.\n"
+     "If refresh is false and it is not the first time the function is\n"
+     "called, it merely returns the list created in the\n"
+     "call when the last refresh was done.\n"
+     "NOTE: The side effect of calling this the first time or\n"
+     "with refresh equal true is that all templates are parsed and cached.\n"
+     "Hence they need to be retrieved with the flags that\n"
+     "the program needs them loaded with (i.e, the strip parameter\n"
+     "passed to Template::GetTemplate.)."},
+    {"AddModifier", (PyCFunction)ctemplate_AddModifier, METH_VARARGS,
+     "Registers a new template modifier.\n"
+     "long_name must start with \"x-\".\n"
+     "If the modifier takes a value (eg \"{{VAR:x-name=value}}\"), then\n"
+     "long_name should end with \"=\".  This is similar to getopt(3) syntax.\n"
+     "We also allow value-specializations, with specific values specified\n"
+     "as part of long-name.  For instance:\n"
+     "   AddModifier(\"x-mod=\", my_modifierA);\n"
+     "   AddModifier(\"x-mod=bar\", my_modifierB);\n"
+     "   AddModifier(\"x-mod2\", my_modifierC);\n"
+     "For the template\n"
+     "   {{VAR1:x-mod=foo}} {{VAR2:x-mod=bar}} {{VAR3:x-mod=baz}} {{VAR4:x-mod2}}\n"
+     "VAR1 and VAR3 would get modified by my_modifierA, VAR2 by my_modifierB,\n"
+     "and VAR4 by my_modifierC.  The order of the AddModifier calls is not\n"
+     "significant.\n"
+     "The modifier must be callable and it will be called with two string arguments:\n"
+     "the text to modify and the argument. If you modifier doesn't take an argument,\n"
+     "the second argument will be an empty string. Otherwise, the argument will include\n"
+     "an leading equal sign. The modifier must return the modified string."},
+    {"AddXssSafeModifier", (PyCFunction)ctemplate_AddXssSafeModifier, METH_VARARGS,
+     "Same as AddModifier() above except that the modifier is considered\n"
+     "to produce safe output that can be inserted in any context without\n"
+     "the need for additional escaping. This difference only impacts\n"
+     "the Auto-Escape mode: In that mode, when a variable (or template-include)\n"
+     "has a modifier added via AddXssSafeModifier(), it is excluded from\n"
+     "further escaping, effectively treated as though it had the :none modifier.\n"
+     "Because Auto-Escape is disabled for any variable and template-include\n"
+     "that includes such a modifier, use this function with care and ensure\n"
+     "that it may not emit harmful output that could lead to XSS.\n"
+     "\n"
+     "Some valid uses of AddXssSafeModifier:\n"
+     ". A modifier that converts a string to an integer since\n"
+     "  an integer is generally safe in any context.\n"
+     ". A modifier that returns one of a fixed number of safe values\n"
+     "  depending on properties of the input.\n"
+     "\n"
+     "Some not recommended uses of AddXssSafeModifier:\n"
+     ". A modifier that applies some extra formatting to the input\n"
+     "  before returning it since the output will still contain\n"
+     "  harmful content if the input does.\n"
+     ". A modifier that applies one type of escaping to the input\n"
+     "  (say HTML-escape). This may be dangerous when the modifier\n"
+     "  is used in a different context (say Javascript) where this\n"
+     "  escaping may be inadequate.\n"},
     {NULL} /* Sentinel */
 };
 
