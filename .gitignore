@@ -5,3 +5,4 @@
 /debian/*.substvars
 /debian/*.*.debhelper
 /debian/python-module-stampdir/
+*.tap
