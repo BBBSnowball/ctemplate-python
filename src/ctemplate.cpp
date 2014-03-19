@@ -26,6 +26,7 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
  */
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h" /* Python include for object definition */
 #include <ctemplate/template.h>
@@ -242,7 +243,7 @@ Dictionary_AddIncludeDictionary (Dictionary_Object* self, PyObject* args) {
 static PyObject*
 Dictionary_SetFilename (Dictionary_Object* self, PyObject* args) {
     const char* name;
-    size_t name_len;
+    Py_ssize_t name_len;
     if (!PyArg_ParseTuple(args, "s#", &name, &name_len))
         return NULL;
     self->dict->SetFilename(ctemplate::TemplateString(name, name_len));
@@ -563,7 +564,7 @@ static PyTypeObject Template_Type = {
 static PyObject *
 ctemplate_SetGlobalValue (PyObject* self, PyObject* args) {
     const char* name;
-    size_t name_len;
+    Py_ssize_t name_len;
     PyObject* obj;
     if (!PyArg_ParseTuple(args, "s#O", &name, &name_len, &obj))
         return NULL;
@@ -680,7 +681,8 @@ public:
                         const std::string& arg) const {
         PyObject *arglist, *result;
 
-        arglist = Py_BuildValue("(s#,s#)", in, inlen, arg.c_str(), arg.size());
+        arglist = Py_BuildValue("(s#,s#)",
+            in, (Py_ssize_t)inlen, arg.c_str(), (Py_ssize_t)arg.size());
         result = PyObject_CallObject(modifier_function, arglist);
         Py_DECREF(arglist);
 
